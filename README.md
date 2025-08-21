@@ -1,0 +1,1 @@
+This is code from the AIM workshop on Homological mirror symmetry and multigraded commutative algebra.
