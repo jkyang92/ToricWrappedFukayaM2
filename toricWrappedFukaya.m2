@@ -12,29 +12,50 @@ isFullRank = M-> (rank M == min(rank source M, rank target M))
 --
 --
 
-isFullRank matrix{{1,0},{0,1}}
-isFullRank matrix{{1,0}}
-isFullRank transpose matrix{{1,0}}
-isFullRank matrix{{1,0},{-1,0}}
-
+--setup the HHLResolutions package
+path = prepend("./HHLResolutions/",path);
+needsPackage "HHLResolutions"
 
 WrappedFukaya = new Type of HashTable
 WrappedFukaya.synonym = "a toric wrapped Fukaya category"
 wrappedFukaya  = method(TypicalValue => WrappedFukaya, Options => true)
 
-wrappedFukaya(List, HashTable) := (A,B) -> (
+wrappedFukaya(List, HashTable) := {} >> o -> (A,B) -> (
   new WrappedFukaya from {
     symbol fukayaRays => A,
     symbol hair => B,
     symbol cache => new CacheTable})
 
-
-wrappedFukaya(List) := (A) -> (
+wrappedFukaya(List) := {} >> o -> (A) -> (
   new WrappedFukaya from {
     symbol fukayaRays => A,
     symbol hair => new HashTable from {},
     symbol cache => new CacheTable})
 
+--Input:  set of a rays
+--Output:  a hash table with keys dimension 0, ..., dim
+--         and values for dim d is the set of faces of dim d in the stratified torus
+torusStrata = raySets ->(
+    matRays := matrix raySets;
+    mhp := makeHHLPolytopes(matRays, ZZ^2);
+    mhpFacesNonUnique := flatten apply(mhp#0,P-> (
+    	    V = vertices P;
+    	    apply(flatten values faces P, F -> V_(F#0) )
+    	    ));
+    cellsUnsorted := apply(unique apply(mhpFacesNonUnique, F->(
+		F_(sortColumns F))), C-> convexHull C);
+    partition(dim,cellsUnsorted)
+    )
+
+end
+restart
+load "toricWrappedFukaya.m2"
+
+
+isFullRank matrix{{1,0},{0,1}}
+isFullRank matrix{{1,0}}
+isFullRank transpose matrix{{1,0}}
+isFullRank matrix{{1,0},{-1,0}}
 
 --hair is going to be represented as (pt, set of rays)
 --
@@ -87,25 +108,7 @@ weightedHair = new HashTable from{
 
 weightedFukaya = wrappedFukaya(weightedRays,weightedHair)
 
---Input:  set of fukayaRays
---Output:  a hash table with keys = dimension
---         and outputs are lists of chambers of that dimension.
-
-needsPackage "HHLResolutions"
---Input:  set of a rays
---Output:  a hash table with keys dimension 0, ..., dim
---         and values for dim d is the set of faces of dim d in the stratified torus
-torusStrata = raySets ->(
-    matRays := matrix raySets;
-    mhp := makeHHLPolytopes(matSigma, ZZ^2);
-    mhpFacesNonUnique := flatten apply(mhp#0,P-> (
-    	    V = vertices P;
-    	    apply(flatten values faces P, F -> V_(F#0) )
-    	    ));
-    cellsUnsorted := apply(unique apply(mhpFacesNonUnique, F->(
-		F_(sortColumns F))), C-> convexHull C);
-    partition(dim,cellsUnsorted)  	
-    )
+raySets = hirzebruchFukaya#fukayaRays
 torusStrata(raySets)
 
 
